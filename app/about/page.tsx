@@ -44,8 +44,9 @@ export default function AboutPage() {
             About <span className="apple-gradient-text">Mentrify</span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-            Connecting <span className="text-gray-900 font-semibold">12th-grade students</span> with mentors who understand their journey.
-            Built by students, for students.
+            {/* Connecting <span className="text-gray-900 font-semibold">12th-grade students</span> with mentors who understand their journey.
+            Built by students, for students. */}
+            We're <span className="text-gray-900 font-semibold">revolutionizing mentorship</span> by connecting students with <span className="text-gray-900 font-semibold">seniors</span> who truly understand their journey. Real experiences, honest guidance, authentic connections.
           </p>
         </div>
       </section>

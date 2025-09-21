@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { getUser, saveUser, isAuthenticated } from "@/lib/auth";
 import { Button } from "@/components/ui/button"; 
+import Navigation from "@/app/components/Navigation";
+import Footer from "@/app/components/Footer";
 
 interface MenteeProfile {
   id: string;
@@ -112,7 +114,8 @@ export default function MenteeProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 md:py-12 mt-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <Navigation />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 mb-16">
         {/* --- Header Section --- */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-6 mb-8">
           
@@ -250,6 +253,8 @@ export default function MenteeProfilePage() {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

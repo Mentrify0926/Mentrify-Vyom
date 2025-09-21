@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { Menu, X, User, LogOut, Settings, BarChart3, UserCircle } from "lucide-react"
-import { getUser, logout, isAuthenticated } from "@/lib/auth"
+import { useRouter, usePathname } from "next/navigation"
+import { Menu, X, LogOut, Settings } from "lucide-react"
+import { getUser, logout } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -19,9 +19,10 @@ import {
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  const [user, setUser] = useState(getUser())
+  const [user, setUser] = useState<any>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,8 +42,10 @@ export default function Navigation() {
     await logout()
     setUser(null)
     setIsAuthenticated(false)
-    router.push('/')
+    router.push("/")
   }
+
+  const isActive = (href: string) => pathname === href
 
   return (
     <nav
@@ -75,67 +78,117 @@ export default function Navigation() {
               { href: "/support", label: "Support" },
             ].map((item) => (
               <Link
+                key={item.href}
                 href={item.href}
-                className="relative text-sm font-medium text-gray-900 group"
+                className={`relative text-sm font-medium transition-colors group
+                  ${
+                    isActive(item.href)
+                      ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+                      : "text-gray-900"
+                  }`}
               >
+                <span>{item.label}</span>
                 <span
-                  className="
-                    relative inline-block transition-all duration-300
-                    text-gray-900
-                    group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600
-                    group-hover:bg-clip-text group-hover:text-transparent
-                  "
-                >
-                  {item.label}
-                </span>
-                <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300 group-hover:w-full"></span>
+                  className={`absolute left-0 -bottom-1 h-[2px] transition-all duration-300
+                    ${
+                      isActive(item.href)
+                        ? "w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                        : "w-0 group-hover:w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                    }`}
+                />
               </Link>
-
             ))}
+
+            {/* Add Profile + Dashboard when logged in */}
+            {isAuthenticated && (() => {
+              let profileHref = `/profile/${user?.id}`
+              let dashboardHref = `/dashboard/${user?.id}`
+
+              if (user?.role?.includes("mentee")) {
+                profileHref = "/profile/demo-user-1"
+                dashboardHref = "/dashboard/demo-user-1"
+              } else if (user?.role?.includes("mentor")) {
+                profileHref = "/profile/demo-mentor-1"
+                dashboardHref = "/dashboard/demo-mentor-1"
+              }
+
+              return (
+                <>
+                  <span className="mx-2 text-gray-400">|</span>
+                  {[{ href: profileHref, label: "Profile" }, { href: dashboardHref, label: "Dashboard" }].map(
+                    (item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`relative text-sm font-medium transition-colors group
+                          ${
+                            isActive(item.href)
+                              ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+                              : "text-gray-900"
+                          }`}
+                      >
+                        <span>{item.label}</span>
+                        <span
+                          className={`absolute left-0 -bottom-1 h-[2px] transition-all duration-300
+                            ${
+                              isActive(item.href)
+                                ? "w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                                : "w-0 group-hover:w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                            }`}
+                        />
+                      </Link>
+                    )
+                  )}
+                </>
+              )
+            })()}
           </div>
 
-          {/* CTA Buttons / User Menu */}
+          {/* User Dropdown (Top-Right) */}
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center space-x-2 px-3 py-2">
+                  <Button
+                    variant="outline"
+                    className="flex items-center space-x-2 px-3 py-2 focus:outline-none focus:ring-0"
+                  >
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                      {user?.name?.[0]?.toUpperCase() || 'U'}
+                      {user?.name?.[0]?.toUpperCase() || "U"}
                     </div>
-                    <span className="text-sm font-medium">{user?.name || 'User'}</span>
+                    <span className="text-sm font-medium">
+                      {user?.name || "User"}
+                    </span>
                   </Button>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">Signed in as</p>
+                      <p className="text-sm font-medium leading-none">
+                        Signed in as
+                      </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {user?.name || 'Demo User'}
+                        {user?.name || "Demo User"}
                       </p>
                     </div>
                   </DropdownMenuLabel>
+
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href={`/profile/${user?.id}`} className="flex items-center">
-                      <UserCircle className="mr-2 h-4 w-4" />
-                      My Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="flex items-center">
-                      <BarChart3 className="mr-2 h-4 w-4" />
-                      Dashboard
-                    </Link>
-                  </DropdownMenuItem>
+
                   <DropdownMenuItem asChild>
                     <Link href="/settings" className="flex items-center">
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
                     </Link>
                   </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-red-600"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                   </DropdownMenuItem>
@@ -145,15 +198,23 @@ export default function Navigation() {
               <>
                 <Link
                   href="/signin"
-                  className="relative text-sm font-medium text-gray-900 group"
+                  className={`relative text-sm font-medium transition-colors group ${
+                    isActive("/signin")
+                      ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+                      : "text-gray-900"
+                  }`}
                 >
-                  <span className="relative inline-block transition-all duration-300 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-[length:200%_100%] bg-left text-gray-900 group-hover:bg-right group-hover:text-transparent">
-                    Sign In
-                  </span>
-                  <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300 group-hover:w-full"></span>
+                  <span>Sign In</span>
+                  <span
+                    className={`absolute left-0 -bottom-1 h-[2px] transition-all duration-300 ${
+                      isActive("/signin")
+                        ? "w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                        : "w-0 group-hover:w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                    }`}
+                  />
                 </Link>
                 <Link href="/mentors">
-                  <button className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-all shadow-sm">
+                  <button className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-all shadow-sm focus:outline-none focus:ring-0">
                     Get Started
                   </button>
                 </Link>
@@ -164,7 +225,7 @@ export default function Navigation() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition"
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition focus:outline-none focus:ring-0"
           >
             {isOpen ? (
               <X className="h-6 w-6 text-gray-700" />
@@ -188,59 +249,107 @@ export default function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="relative block font-medium text-gray-900 group"
+                className={`relative block font-medium transition-colors group ${
+                  isActive(item.href)
+                    ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+                    : "text-gray-900"
+                }`}
               >
-                <span className="relative inline-block transition-all duration-300 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-[length:200%_100%] bg-left text-gray-900 group-hover:bg-right group-hover:text-transparent">
-                  {item.label}
-                </span>
-                <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300 group-hover:w-full"></span>
+                <span>{item.label}</span>
+                <span
+                  className={`absolute left-0 -bottom-1 h-[2px] transition-all duration-300 ${
+                    isActive(item.href)
+                      ? "w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                      : "w-0 group-hover:w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                  }`}
+                />
               </Link>
             ))}
 
+            {/* Add Profile + Dashboard when logged in */}
+            {isAuthenticated && (() => {
+              let profileHref = `/profile/${user?.id}`
+              let dashboardHref = `/dashboard/${user?.id}`
+
+              if (user?.role?.includes("mentee")) {
+                profileHref = "/profile/demo-user-1"
+                dashboardHref = "/dashboard/demo-user-1"
+              } else if (user?.role?.includes("mentor")) {
+                profileHref = "/profile/demo-mentor-1"
+                dashboardHref = "/dashboard/demo-mentor-1"
+              }
+
+              return (
+                <>
+                  {[{ href: profileHref, label: "Profile" }, { href: dashboardHref, label: "Dashboard" }].map(
+                    (item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`relative block font-medium transition-colors group ${
+                          isActive(item.href)
+                            ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        <span
+                          className={`absolute left-0 -bottom-1 h-[2px] transition-all duration-300 ${
+                            isActive(item.href)
+                              ? "w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                              : "w-0 group-hover:w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                          }`}
+                        />
+                      </Link>
+                    )
+                  )}
+                </>
+              )
+            })()}
+
             <div className="pt-4 border-t border-gray-200">
               {isAuthenticated ? (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                      {user?.name?.[0]?.toUpperCase() || 'U'}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
-                      <p className="text-xs text-gray-500">Signed in as</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Link href={`/profile/${user?.id}`} className="flex items-center text-sm text-gray-700 hover:text-blue-600">
-                      <UserCircle className="mr-2 h-4 w-4" />
-                      My Profile
-                    </Link>
-                    <Link href="/dashboard" className="flex items-center text-sm text-gray-700 hover:text-blue-600">
-                      <BarChart3 className="mr-2 h-4 w-4" />
-                      Dashboard
-                    </Link>
-                    <Link href="/settings" className="flex items-center text-sm text-gray-700 hover:text-blue-600">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                    <button onClick={handleLogout} className="flex items-center text-sm text-red-600 hover:text-red-700">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </button>
-                  </div>
+                <div className="space-y-2">
+                  <Link
+                    href="/settings"
+                    className={`flex items-center text-sm transition-colors ${
+                      isActive("/settings")
+                        ? "text-blue-600"
+                        : "text-gray-700 hover:text-blue-600"
+                    }`}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center text-sm text-red-600 hover:text-red-700 focus:outline-none focus:ring-0"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </button>
                 </div>
               ) : (
                 <>
                   <Link
                     href="/signin"
-                    className="relative block font-medium text-gray-900 group"
+                    className={`relative block font-medium transition-colors group ${
+                      isActive("/signin")
+                        ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+                        : "text-gray-900"
+                    }`}
                   >
-                    <span className="relative inline-block transition-all duration-300 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-[length:200%_100%] bg-left text-gray-900 group-hover:bg-right group-hover:text-transparent">
-                      Sign In
-                    </span>
-                    <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300 group-hover:w-full"></span>
+                    <span>Sign In</span>
+                    <span
+                      className={`absolute left-0 -bottom-1 h-[2px] transition-all duration-300 ${
+                        isActive("/signin")
+                          ? "w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                          : "w-0 group-hover:w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                      }`}
+                    />
                   </Link>
                   <Link href="/mentors" className="block mt-4">
-                    <button className="w-full px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:opacity-90 transition shadow-sm">
+                    <button className="w-full px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:opacity-90 transition shadow-sm focus:outline-none focus:ring-0">
                       Get Started
                     </button>
                   </Link>
